@@ -1,0 +1,37 @@
+{
+  "name": "spacecraft.io",
+  "version": "0.0.1",
+  "description": "An io game that can be embedded into your blog website.",
+  "author": "YiguiDing",
+  "license": "ISC",
+  "files": [
+    "./client/dist/",
+    "./server/dist/"
+  ],
+  "main": "./server/dist/index.js",
+  "module": "./client/dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./client/dist/index.js",
+      "types": "./client/dist/types/index.d.ts"
+    },
+    "./client": {
+      "import": "./client/dist/index.js",
+      "types": "./client/dist/types/index.d.ts"
+    },
+    "./style.css": "./client/dist/style.css",
+    "./client/style.css": "./client/dist/style.css",
+    "./server": {
+      "import": "./server/dist/index.js",
+      "types": "./server/dist/types/index.d.ts"
+    }
+  },
+  "keywords": [
+    "io",
+    "game",
+    "vue",
+    "component",
+    "spacecraft",
+    "Asteroids"
+  ]
+}
