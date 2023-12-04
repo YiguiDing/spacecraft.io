@@ -124,7 +124,7 @@ onBeforeUnmount(gameDestory);
         v-text="'关于'"
         class="btn abut"
         v-if="showCanvas"
-        href="http://dingdingdang.online"
+        href="https://github.com/YiguiDing/spacecraft.io"
         target="_blank"
       />
       <ElButton

@@ -1,12 +1,12 @@
 {
   "name": "spacecraft.io",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "An io game that can be embedded into your blog website.",
   "author": "YiguiDing",
   "license": "ISC",
   "files": [
-    "./client/dist/",
-    "./server/dist/"
+    "./server/dist",
+    "./client/dist"
   ],
   "main": "./server/dist/index.js",
   "module": "./client/dist/index.js",
