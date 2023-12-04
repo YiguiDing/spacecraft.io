@@ -23,32 +23,41 @@ export class Net implements Observer {
   constructor(private game: Game, private inputListener: InputListener) {
     this.inputListener.attach(this);
   }
-  init() {
-    this.client = io(this.game.config.serverAddr || window.location.host, {
-      withCredentials: false, // for Access-Control-Allow-Origin: "*"
-      autoConnect: false,
-    });
-    this.client.connect();
-    // 连接
-    this.client.on("connect", () => {
-      console.log("connect");
-      this.isConnect = true;
-      this.enter();
-    });
-    this.client.on("reconnect", () => {
-      console.log("reconnect");
-      this.isConnect = true;
-      this.enter();
-    });
-    this.client.on("disconnect", () => {
-      console.log("disconnect");
-      this.isConnect = false;
+  async run() {
+    // 建立连接
+    await this.connect();
+    // 立即监听其他用户的消息
+    await this.listen();
+    // 获取其他用户的信息
+    await this.users();
+    // 进入游戏
+    await this.enter();
+  }
+  connect() {
+    return new Promise<void>((resolve, reject) => {
+      this.client = io(this.game.config.serverAddr || window.location.host, {
+        withCredentials: false, // for Access-Control-Allow-Origin: "*"
+        autoConnect: false,
+      });
+      this.client.connect();
+      // 连接
+      this.client.on("connect", () => {
+        console.log("connect");
+        this.isConnect = true;
+        resolve();
+      });
+      this.client.on("reconnect", () => {
+        console.log("reconnect");
+        this.isConnect = true;
+      });
+      this.client.on("disconnect", () => {
+        console.log("disconnect");
+        this.isConnect = false;
+      });
     });
   }
   enter() {
-    if (this.isConnect) {
-      this.listen();
-      // 连接成功后进入游戏
+    return new Promise<void>((resolve) => {
       this.client.emit(
         "enter",
         this.netHelper.getPlayerInfoFrame(this.game),
@@ -56,19 +65,23 @@ export class Net implements Observer {
           console.log("syncData");
           console.log(syncData);
           this.netHelper.applySelfDataFrame(this.game, syncData);
+          resolve();
         }
       );
-      // 请求获取其他玩家的信息
+    });
+  }
+  users() {
+    // 请求获取其他玩家的信息
+    return new Promise<void>((resolve) => {
       this.client.emit(
         "users",
         this.netHelper.getPlayerInfoFrame(this.game),
         (frames: PlayerInfoFrame[]) => {
           this.netHelper.applyPlayerInfoFrame(this.game, frames);
+          resolve();
         }
       );
-      // 帧同步
-      this.client.emit("sync", this.netHelper.getPlayerDataFrame(this.game));
-    }
+    });
   }
   listen() {
     if (this.isConnect) {
@@ -94,7 +107,7 @@ export class Net implements Observer {
       });
     }
   }
-  onPlay() {
+  onRePlay() {
     if (this.isConnect) {
       // 连接成功后进入游戏
       this.client.emit("enter", this.netHelper.getPlayerInfoFrame(this.game));

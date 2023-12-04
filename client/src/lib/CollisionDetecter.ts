@@ -68,7 +68,7 @@ export class CollisionDetecter {
       if (beHittedPlayer.bloods <= 0) {
         // 如果是自己就重新开始游戏
         if (beHittedPlayer.uid == this.game.self.uid) {
-          this.game.Play();
+          this.game.rePlay();
         } else {
           // 如果是别人就删除该玩家
           this.game.others.delete(beHittedPlayer.uid);

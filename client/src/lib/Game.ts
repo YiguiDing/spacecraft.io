@@ -94,13 +94,13 @@ export class Game {
     this.particle.draw(this.ctx);
     this.ctx.restore();
   }
-  Play() {
+  rePlay() {
     this.self = new Spacecraft(this, getUid(), this.config.userName);
-    this.network.onPlay();
+    this.network.onRePlay();
   }
-  run() {
+  async run() {
+    this.self = new Spacecraft(this, getUid(), this.config.userName);
     document.body.appendChild(this.stats.dom);
-    this.Play();
     let t1 = Date.now();
     let t2 = Date.now();
     let animate = () => {
@@ -115,7 +115,9 @@ export class Game {
     };
     this.timer = requestAnimationFrame(animate);
     this.input.listen();
-    this.config.onlineMode && this.network.init();
+    if (this.config.onlineMode) {
+      this.network.run();
+    }
   }
   destory() {
     document.body.removeChild(this.stats.dom);
