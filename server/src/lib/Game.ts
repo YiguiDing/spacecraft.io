@@ -8,9 +8,6 @@ import { DL_Element, DolbueLinkedList } from "./DLInkedList";
 let dev = false;
 export class Game {
   players_info = new Map<string, PlayerInfoFrame>();
-  players_sync = new Map<string, PlayerDataFrame>();
-  sid2uid = new Map<string, string>(); // socketId => userId
-  uid2sid = new Map<string, string>(); // userId => socketId
   heartbeatService = new heartbeatService<PlayerInfoFrame>();
   constructor(private io: Server) {}
   run() {
@@ -22,8 +19,6 @@ export class Game {
         dev && console.log("enter");
         playerInfo = data;
         socket.broadcast.emit("enter", [data]);
-        this.uid2sid.set(data.uid, socket.id);
-        this.sid2uid.set(socket.id, data.uid);
         this.players_info.set(socket.id, data);
       });
       socket.on("heartbeat", () => {
@@ -40,8 +35,7 @@ export class Game {
       socket.on("sync", (data: PlayerDataFrame) => {
         dev && console.log("sync");
         dev && console.log(data);
-        this.io.emit("sync", [data]);
-        // this.players_sync.set(socket.id, data); // save
+        socket.broadcast.emit("input", [data]);
       });
       socket.on("input", (data: PlayerInputsFrame) => {
         dev && console.log("input");
@@ -59,27 +53,20 @@ export class Game {
         if (this.players_info.has(socket.id)) {
           const playInfo = this.players_info.get(socket.id);
           const playerId = playInfo.uid;
-
           // leave
           socket.broadcast.emit("leave", playInfo);
+          // delete info
           this.players_info.delete(socket.id);
-          this.players_sync.delete(socket.id);
-          this.sid2uid.delete(socket.id);
-          this.uid2sid.delete(playerId);
+          this.heartbeatService.removeHeartbeat(socket.id);
         }
       });
     });
     this.heartbeatService.onHeartStopBeat((stopedHeartbeat) => {
       const playInfo = stopedHeartbeat.data;
       const socketId = stopedHeartbeat.key;
-      const playerId = playInfo.uid;
-
       // leave
       this.io.emit("leave", playInfo);
       this.players_info.delete(socketId);
-      this.players_sync.delete(socketId);
-      this.sid2uid.delete(socketId);
-      this.uid2sid.delete(playerId);
     });
   }
   destory() {
@@ -100,7 +87,7 @@ class heartbeatService<T> {
   heartbeatTimer = null;
   keepAlive = 10000;
   constructor() {}
-  heartbeatHandler(key: string, data: T) {
+  removeHeartbeat(key: string) {
     // 删除旧的
     if (this.heartbeatMap.has(key)) {
       // 通过id找到节点
@@ -110,6 +97,10 @@ class heartbeatService<T> {
       // 在Map中删除节点
       this.heartbeatMap.delete(key);
     }
+  }
+  heartbeatHandler(key: string, data: T) {
+    // 删除旧的
+    this.removeHeartbeat(key);
     // 创建新的
     // 插入数据获取到`ListElement`
     let element = this.heartbeatList.tailPush({
@@ -143,7 +134,7 @@ class heartbeatService<T> {
           break;
         }
       } while (true);
-    }, 2000);
+    }, 5000);
   }
   destory() {
     clearInterval(this.heartbeatTimer);

@@ -45,9 +45,6 @@ export class WebApp {
     setInterval(() => {
       console.log("-------------------check-------------------");
       console.dir(this.gameServer.players_info, { depth: null });
-      console.dir(this.gameServer.players_sync, { depth: null });
-      console.dir(this.gameServer.uid2sid, { depth: null });
-      console.dir(this.gameServer.sid2uid, { depth: null });
       console.dir(this.gameServer.heartbeatService.heartbeatList, {
         depth: null,
       });
