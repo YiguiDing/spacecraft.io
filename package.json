@@ -1,9 +1,12 @@
 {
   "name": "spacecraft.io",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "An io game that can be embedded into your blog website.",
   "author": "YiguiDing",
   "license": "ISC",
+  "scripts": {
+    "commit": "git cz"
+  },
   "files": [
     "./server/dist",
     "./client/dist"
@@ -33,5 +36,13 @@
     "component",
     "spacecraft",
     "Asteroids"
-  ]
+  ],
+  "devDependencies": {
+    "cz-conventional-changelog": "^3.3.0"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  }
 }
