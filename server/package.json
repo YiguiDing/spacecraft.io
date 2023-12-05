@@ -4,7 +4,7 @@
   "scripts": {
     "dev": "ts-node ./src/example.ts",
     "build": "npm run build:index && npm run build:types",
-    "build:index": "tsc --build --project tsconfig.json",
+    "build:index": "tsc --build",
     "build:types": "tsc-alias -p tsconfig.json",
     "run": "node ./dist/index.js"
   },
