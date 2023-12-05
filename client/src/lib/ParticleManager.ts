@@ -1,4 +1,5 @@
 import { Game } from "./Game";
+import { Particle } from "./Player";
 import { Vector } from "./Vender";
 import { random_flo, random_pick } from "./utils";
 

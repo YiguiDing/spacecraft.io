@@ -1,7 +1,8 @@
 import { Game } from "./Game";
 import { io, Socket } from "socket.io-client";
 import { Observer } from "./interface/Observer";
-import { Bullet, Spacecraft } from "./Spacecraft";
+import { Bullet, Player } from "./Player";
+import { Spacecraft } from "./Spacecraft";
 import { InputListener, Actions } from "./InputListener";
 import {
   PlayerDataFrame,
@@ -113,7 +114,7 @@ export class Net implements Observer {
       this.client.emit("enter", this.netHelper.getPlayerInfoFrame(this.game));
     }
   }
-  onShotEmeny(shotted_enemy: Spacecraft, bullet: Bullet) {
+  onShotEmeny(shotted_enemy: Player, bullet: Bullet) {
     if (this.isConnect) {
       this.client.emit(
         "shot",
@@ -161,7 +162,7 @@ class NetHelper {
       if (frame.uid == game.self.uid) return;
       let other =
         game.others.get(frame.uid) ||
-        new Spacecraft(game, frame.uid, frame.uname);
+        new Spacecraft(null, frame.uid, frame.uname);
       other.uname = frame.uname;
       other.fillStyle = frame.fillStyle;
       other.strokeStyle = frame.strokeStyle;
@@ -212,7 +213,7 @@ class NetHelper {
   }
   getPlayerShotEnemyFrame(
     game: Game,
-    shottedEnemy: Spacecraft,
+    shottedEnemy: Player,
     bullet: Bullet
   ): PlayerShotEnemyFrame {
     return {

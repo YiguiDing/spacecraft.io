@@ -1,6 +1,6 @@
 import { Game } from "./Game";
 import { Vector } from "./Vender";
-import { Spacecraft } from "./Spacecraft";
+import { Player } from "./Player";
 import { React, QuadTree } from "./Quadtree";
 
 export interface Collision {
@@ -26,13 +26,13 @@ export class CollisionDetecter {
       this.game.height
     );
     // 利用四叉树做碰撞检测
-    let enemysQuadTree = new QuadTree<Spacecraft>(boundary);
+    let enemysQuadTree = new QuadTree<Player>(boundary);
     enemysQuadTree.addAll(this.game.others.values());
-    this.game.self.texture.bullets.bullets.forEach((bullet) => {
+    this.game.self.weapon.bullets.forEach((bullet) => {
       let bulletArea = bullet.getArea();
       enemysQuadTree.find(bulletArea).forEach((enemy) => {
         // 碰撞检测（只对自己的子弹做检测）
-        if (bulletArea.collisionReact(enemy.getArea())) {
+        if (bulletArea.collision(enemy.getArea())) {
           this.collisionCheckResult.push({
             hitted_id: enemy.uid,
             bullet: {

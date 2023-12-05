@@ -1,18 +1,20 @@
 import { Net } from "./Net";
-import { getUid } from "./utils";
+import { getUid, random_int } from "./utils";
 import { Config } from "./Config";
 import { Background } from "./Background";
+import { Player } from "./Player";
 import { Spacecraft } from "./Spacecraft";
 import { InputListener } from "./InputListener";
 import { PageAnimation } from "./PageAnimation";
 import { ParticleManager } from "./ParticleManager";
 import { CollisionDetecter } from "./CollisionDetecter";
+import { Vector } from "./Vender";
 import Stats from "stats.js";
 
 export class Game {
   config = new Config();
-  self!: Spacecraft;
-  others: Map<string, Spacecraft> = new Map();
+  self!: Player;
+  others: Map<string, Player> = new Map();
   input = new InputListener();
   network = new Net(this, this.input);
   collision = new CollisionDetecter(this);
@@ -95,11 +97,16 @@ export class Game {
     this.ctx.restore();
   }
   rePlay() {
-    this.self = new Spacecraft(this, getUid(), this.config.userName);
+    let pos = new Vector(
+      // 初始出生点都在第一个视口
+      random_int(0, this.viewWidth),
+      random_int(0, this.viewHeight)
+    );
+    this.self = new Spacecraft(pos, getUid(), this.config.userName);
     this.network.onRePlay();
   }
   async run() {
-    this.self = new Spacecraft(this, getUid(), this.config.userName);
+    this.rePlay();
     document.body.appendChild(this.stats.dom);
     let t1 = Date.now();
     let t2 = Date.now();

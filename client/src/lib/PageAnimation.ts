@@ -21,7 +21,7 @@ export class PageAnimation {
       let backup = this.gm.config.gameRootEleRef.style.display;
       this.gm.config.gameRootEleRef.style.display = "none";
       //
-      this.gm.self.texture.bullets.bullets.forEach((bullet) => {
+      this.gm.self.weapon.bullets.forEach((bullet) => {
         // 从子弹的绝对坐标转换到屏幕的相对坐标
         let relativeX = bullet.pos.x - this.gm.viewPos.x;
         let relativeY = bullet.pos.y - this.gm.viewPos.y;

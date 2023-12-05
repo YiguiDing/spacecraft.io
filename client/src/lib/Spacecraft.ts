@@ -7,41 +7,41 @@ import {
   drawPolygon,
   radians,
   random_flo,
-  random_int,
   random_pick,
   unbound,
 } from "./utils";
-import { CollisionCheckable, QuadTreeElementType, React } from "./Quadtree";
+import { React } from "./Quadtree";
+import { Player, Bullet, Particle, ParticleManager } from "./Player";
 
-export class Spacecraft implements QuadTreeElementType, CollisionCheckable {
+export class Spacecraft implements Player {
   bloods = 10;
   pos = new Vector(100, 100); // 位置
   vel = new Vector(0, 0); // 矢量速度
-  dir = new Vector(1, 0); // 方向
+  dir = new Vector(random_flo(-1, 1), random_flo(-1, 1)).normalize(); // 方向
   movAcc1Speed = 200; // 普通移动加速度
   movAcc2Speed = 400; // 加速移动加速度
   movMaxSpeed = 600; // 最大速度
   rotSpeed = 0; // 旋转速度
   rotAccSpeed = 90; // 旋转加速度
   rotMaxSpeed = 365; // 旋转最大速度
-  fillStyle = random_pick(["black", "gray", "orange", "green", "blue"]);
-  strokeStyle = random_pick(["black", "gray"]);
+  fillStyle = random_pick(["gray", "white"]);
+  strokeStyle = random_pick(["black"]);
   height = 20; // 宽
   width = 30; // 高
-  texture = new SpaceShuttleTexture(this);
-  constructor(public game: Game, public uid: string, public uname: string) {
-    // 随机位置
-    this.pos = new Vector(
-      random_int(0, game.width),
-      random_int(0, game.height)
-    );
+  particle: ParticleManager = new Spacecrift_ParticleManger(this);
+  weapon: Spacecrift_WeaponManager = new Spacecrift_WeaponManager(this);
+  constructor(pos: Vector | null, public uid: string, public uname: string) {
+    if (pos) this.pos = pos;
   }
   update(game: Game, input: Actions, dt: number) {
     this.movementUpdate(game, input, dt);
-    this.texture.update(game, this, input, dt);
+    this.weapon.update(game, this, input, dt);
+    this.particle.update(game, this, input, dt);
   }
   draw(ctx: CanvasRenderingContext2D) {
-    this.texture.draw(ctx);
+    this.particle.draw(ctx);
+    this.weapon.draw(ctx);
+    this.texture(ctx);
   }
   movementUpdate(game: Game, input: Actions, dt: number) {
     // 向前移动
@@ -80,43 +80,14 @@ export class Spacecraft implements QuadTreeElementType, CollisionCheckable {
     this.pos.x = unbound(0, this.pos.x, game.width);
     this.pos.y = unbound(0, this.pos.y, game.height);
   }
-  getCenterX(): number {
-    return this.pos.x;
-  }
-  getCenterY(): number {
-    return this.pos.y;
-  }
-  getArea(): React {
-    return new React(this.pos.x, this.pos.y, this.height, this.width);
-  }
-}
-
-class SpaceShuttleTexture {
-  unit: number;
-  flames: FlamesManger;
-  bullets: bulletsManager;
-  constructor(private self: Spacecraft) {
-    this.unit = this.self.width / 3;
-    this.flames = new FlamesManger(self);
-    this.bullets = new bulletsManager(this);
-  }
-  update(game: Game, player: Spacecraft, input: Actions, dt: number) {
-    this.flames.update(game, input, dt);
-    this.bullets.update(game, player, input, dt);
-  }
-  draw(ctx: CanvasRenderingContext2D) {
-    this.flames.draw(ctx);
-    this.bullets.draw(ctx);
-    this.textureDraw(ctx);
-  }
-  textureDraw(ctx: CanvasRenderingContext2D) {
-    let unit = this.unit;
-    let fill = "white";
-    let strk = "black";
+  texture(ctx: CanvasRenderingContext2D) {
+    let unit = this.width / 3;
+    let fill = this.fillStyle;
+    let strk = this.strokeStyle;
     ctx.save();
     // 使用相对玩家中心的坐标
-    ctx.translate(this.self.pos.x, this.self.pos.y);
-    ctx.rotate(this.self.dir.angle());
+    ctx.translate(this.pos.x, this.pos.y);
+    ctx.rotate(this.dir.angle());
     // 引擎部分，矩形坐标
     drawPolygon(
       ctx,
@@ -216,9 +187,18 @@ class SpaceShuttleTexture {
     );
     ctx.restore();
   }
+  getCenterX(): number {
+    return this.pos.x;
+  }
+  getCenterY(): number {
+    return this.pos.y;
+  }
+  getArea(): React {
+    return new React(this.pos.x, this.pos.y, this.height, this.width);
+  }
 }
 
-export class Bullet implements QuadTreeElementType, CollisionCheckable {
+export class MissileBullet implements Bullet {
   initSpeed = 100; // 初速度
   accSpeed = 500; // 加速度
   maxSpeed = 1000; // 最大速度
@@ -231,14 +211,11 @@ export class Bullet implements QuadTreeElementType, CollisionCheckable {
   constructor(
     public pos: Vector, // 位置
     public dir: Vector, // 方向
-    public vel: Vector, // 速度
-    public oft: Vector // offset,偏移量
+    public vel: Vector // 速度
   ) {
-    // 根据偏移量计算真实位置
-    this.pos.add(this.oft.rotateNew(this.dir.angle()));
     this.creatTime = Date.now();
   }
-  update(game: Game, player: Spacecraft, input: Actions, dt: number) {
+  update(game: Game, player: Player, input: Actions, dt: number) {
     // 计算速度
     this.vel.add(this.dir.mulNew(this.accSpeed * dt));
     // 限制速度
@@ -266,6 +243,7 @@ export class Bullet implements QuadTreeElementType, CollisionCheckable {
     ctx.strokeRect(-this.width / 2, -this.height / 2, this.width, this.height);
     // 子弹头处圆形
     ctx.fillStyle = this.fillStyle;
+    ctx.strokeStyle = this.strokeStyle;
     // 贝塞尔曲线
     drawBezierLine(
       ctx,
@@ -274,6 +252,7 @@ export class Bullet implements QuadTreeElementType, CollisionCheckable {
       [+this.width / 2 + 2 * this.height, 0]
     );
     ctx.fill();
+    ctx.stroke();
 
     // 移动到子弹尾部
     ctx.translate(-this.width / 2, 0);
@@ -318,26 +297,28 @@ export class Bullet implements QuadTreeElementType, CollisionCheckable {
   }
 }
 // 子弹
-class bulletsManager {
+class Spacecrift_WeaponManager {
   lastFiredTime = 0; // 上次开火时间
   fireInterval = 500; // 开火间隔
   keepAlive = 3000; // 子弹存活周期
   bullets: Array<Bullet> = [];
   maxLength = 10;
-  constructor(private texture: SpaceShuttleTexture) {}
-  update(game: Game, player: Spacecraft, input: Actions, dt: number) {
+  constructor(private self: Spacecraft) {}
+  update(game: Game, player: Player, input: Actions, dt: number) {
     let now = Date.now();
     // 限制开火间隔
     if (
       input.includes(Action.Fire) &&
       this.lastFiredTime + this.fireInterval < now
     ) {
-      let unit = this.texture.unit;
+      let unit = this.self.width / 3;
       let pos = player.pos.cp();
       let dir = player.dir.cp();
       let vel = player.vel.cp();
       let oft = new Vector(-1 * unit, random_pick([+2 * unit, -2 * unit]));
-      this.bullets.push(new Bullet(pos, dir, vel, oft));
+      // 根据偏移量计算真实位置
+      pos.add(oft.rotateNew(dir.angle()));
+      this.bullets.push(new MissileBullet(pos, dir, vel));
       this.lastFiredTime = now;
     }
     // 限制子弹数量
@@ -357,13 +338,13 @@ class bulletsManager {
     this.bullets.forEach((bullet) => bullet.draw(ctx));
   }
 }
-
 // 火焰
-class FlamesManger {
+class Spacecrift_ParticleManger {
+  particles: Array<Particle> = [];
   // 火焰
   flamesScare: 0 | 1 | 2 = 0;
-  constructor(private self: Spacecraft) {}
-  update(game: Game, input: Actions, dt: number) {
+  constructor(private self: Player) {}
+  update(game: Game, self: Player, input: Actions, dt: number) {
     if (input.includes(Action.MoveOn)) {
       this.flamesScare = 1;
       if (input.includes(Action.SpeedUp)) {
@@ -379,12 +360,12 @@ class FlamesManger {
     // 移动到飞船中心
     ctx.translate(this.self.pos.x, this.self.pos.y);
     ctx.rotate(this.self.dir.angle());
-    let unit = this.self.texture.unit;
+    let unit = this.self.width / 3;
     let r = unit;
     // 移动到飞船尾部
     ctx.translate(-2.5 * unit, 0);
     let factor = this.flamesScare;
-    for (let idx = 0; idx < 10; idx++) {
+    for (let idx = 0; idx < 5; idx++) {
       // 蓝色火焰
       ctx.beginPath();
       ctx.arc(
@@ -394,7 +375,7 @@ class FlamesManger {
         0,
         2 * Math.PI
       );
-      ctx.fillStyle = "rgba(0,191,255,0.5)";
+      ctx.fillStyle = "rgba(0,191,255,0.3)";
       ctx.fill();
       // 橘黄色火焰
       ctx.beginPath();
@@ -405,7 +386,7 @@ class FlamesManger {
         0,
         2 * Math.PI
       );
-      ctx.fillStyle = "rgba(255,255,0,0.5)";
+      ctx.fillStyle = "rgba(255,255,0,0.3)";
       ctx.fill();
       // 红色火焰
       ctx.beginPath();
