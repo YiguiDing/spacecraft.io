@@ -62,7 +62,7 @@ export class PageAnimation {
     // 限制移动范围
     // this.game.viewPos.x = bound(0, newX, this.game.width - this.game.viewWidth);
     // this.game.viewPos.y = bound(0, newY, this.game.height - this.game.viewHeight);
-    this.gm.viewPos.x = newX;
-    this.gm.viewPos.y = newY;
+    // this.gm.viewPos.x = newX;
+    // this.gm.viewPos.y = newY;
   }
 }

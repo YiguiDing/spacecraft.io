@@ -1,5 +1,5 @@
 import { Net } from "./Net";
-import { getUid, random_int } from "./utils";
+import { bound, getUid, random_int } from "./utils";
 import { Config } from "./Config";
 import { Background } from "./Background";
 import { Player } from "./Player";
@@ -21,11 +21,12 @@ export class Game {
   particle = new ParticleManager(this);
   pageAni = new PageAnimation(this);
   background!: Background;
-  width = 1920 * 4;
-  height = 960 * 4;
+  width = 1920 * 20;
+  height = 960 * 20;
   viewPos = { x: 0, y: 0 };
   private _viewWidth = 1920;
   private _viewHeight = 960;
+  camera = new Camera(this);
   ctx: CanvasRenderingContext2D;
   canvas: HTMLCanvasElement;
   timer: any = 0;
@@ -42,6 +43,7 @@ export class Game {
     this.stats.dom.style.right = "0px";
   }
   update(dt: number) {
+    this.camera.update(dt);
     if (this.config.onlineMode) {
       this.background.update(dt);
     }
@@ -65,7 +67,7 @@ export class Game {
     );
     // 底色
     if (this.config.onlineMode) {
-      this.ctx.fillStyle = "black";
+      this.ctx.fillStyle = "rgba(0,5,24,1)";
       this.ctx.fillRect(
         0,
         0,
@@ -74,19 +76,14 @@ export class Game {
       );
     }
     // 调整视口至玩家所在区域
-    this.ctx.translate(-this.viewPos.x, -this.viewPos.y);
-    // 调整视口为始终以玩家为中心
-    // this.ctx.translate(
-    //   -this.self.pos.x + this.viewWidth / 2,
-    //   -this.self.pos.y + this.viewHeight / 2
-    // );
+    this.camera.translate(this.ctx);
     // 背景色
     if (this.config.onlineMode) {
       this.background?.draw(this.ctx);
     }
     // 边界
     this.ctx.save();
-    this.ctx.strokeStyle = "white";
+    this.ctx.strokeStyle = "black";
     this.ctx.lineWidth = 5;
     this.ctx.strokeRect(0, 0, this.width, this.height);
     this.ctx.restore();
@@ -146,5 +143,35 @@ export class Game {
   public set viewHeight(val: number) {
     this.canvas.height = val;
     this._viewHeight = val;
+  }
+}
+
+class Camera {
+  constructor(public game: Game) {}
+  update(dt: number) {
+    // 视口跟随玩家位置
+    let vpcx = this.game.viewPos.x + this.game.viewWidth / 2;
+    let vpcy = this.game.viewPos.y + this.game.viewHeight / 2;
+    let lenw = this.game.self.pos.x - vpcx;
+    let lenh = this.game.self.pos.y - vpcy;
+    let dx = 2 * lenw * dt;
+    let dy = 4 * lenh * dt;
+    this.game.viewPos.x += dx;
+    this.game.viewPos.y += dy;
+    // 限制视口紧随玩家
+    this.game.viewPos.x = bound(
+      this.game.self.pos.x - this.game.viewWidth,
+      this.game.viewPos.x,
+      this.game.self.pos.x + this.game.viewWidth
+    );
+    this.game.viewPos.y = bound(
+      this.game.self.pos.y - this.game.viewHeight,
+      this.game.viewPos.y,
+      this.game.self.pos.y + this.game.viewHeight
+    );
+  }
+  translate(ctx: CanvasRenderingContext2D) {
+    // 调整视口
+    ctx.translate(-this.game.viewPos.x, -this.game.viewPos.y);
   }
 }
