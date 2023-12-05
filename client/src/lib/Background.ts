@@ -1,4 +1,5 @@
 import { Game } from "./Game";
+import { Cycle, React } from "./Quadtree";
 import { Vector } from "./Vender";
 import { bound, radians, random_flo, random_int } from "./utils";
 
@@ -23,9 +24,11 @@ export class Background {
   }
   addMeteor(dt: number) {
     let now = Date.now();
+    // 定时生成流星
     if (this.meteorTimer + this.meteorIntevol < now) {
       this.meteorTimer = now;
       let pos = new Vector(
+        // 只在视口区域生成
         random_int(this.game.viewPos.x, this.game.viewWidth),
         random_int(this.game.viewPos.y, this.game.viewHeight)
       );
@@ -41,10 +44,23 @@ export class Background {
     this.meteors.forEach((meteor) => meteor.update(dt));
   }
   draw(ctx: CanvasRenderingContext2D) {
+    let vcx = this.game.viewPos.x + this.game.viewWidth / 2;
+    let vcy = this.game.viewPos.y + this.game.viewHeight / 2;
+    let vcw = this.game.viewWidth;
+    let vch = this.game.viewHeight;
+    let vReact = new React(vcx, vcy, vcw, vch);
     ctx.save();
+    // 绘制背景色
     ctx.fillStyle = "rgba(0,5,24,1)";
     ctx.fillRect(0, 0, this.game.width, this.game.height);
-    this.stars.forEach((star) => star.draw(ctx));
+    // 绘制星星
+    this.stars.forEach((star) => {
+      // 只绘制视口内的星星
+      if (vReact.collision(star.cycle)) {
+        star.draw(ctx);
+      }
+    });
+    // 绘制流星
     this.meteors.forEach((meteor) => meteor.draw(ctx));
     ctx.restore();
   }
@@ -52,12 +68,10 @@ export class Background {
 class Star {
   deg = random_int(0, 360);
   degSpeed = random_int(-90, 90);
-  constructor(
-    private x: number,
-    private y: number,
-    private r: number,
-    private a: number
-  ) {}
+  cycle: Cycle;
+  constructor(x: number, y: number, r: number, private a: number) {
+    this.cycle = new Cycle(x, y, r);
+  }
   update(dt: number) {
     this.deg += this.degSpeed * dt;
     this.deg %= 360;
@@ -67,7 +81,7 @@ class Star {
   draw(ctx: CanvasRenderingContext2D) {
     ctx.save();
     ctx.beginPath();
-    ctx.arc(this.x, this.y, this.a, 0, 2 * Math.PI);
+    ctx.arc(this.cycle.centerX, this.cycle.centerY, this.a, 0, 2 * Math.PI);
     ctx.fillStyle = `rgba(255,255,255,${this.a})`;
     ctx.fill();
     ctx.restore();
