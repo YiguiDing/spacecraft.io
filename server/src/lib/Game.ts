@@ -15,12 +15,17 @@ export class Game {
     this.io.on("connection", (socket) => {
       dev && console.log("connection");
       let playerInfo = null;
-      socket.on("enter", (data: PlayerInfoFrame) => {
-        dev && console.log("enter");
-        playerInfo = data;
-        socket.broadcast.emit("enter", [data]);
-        this.players_info.set(socket.id, data);
-      });
+      socket.on(
+        "enter",
+        (info: PlayerInfoFrame, data: PlayerDataFrame, callback) => {
+          dev && console.log("enter");
+          playerInfo = info;
+          socket.broadcast.emit("enter", [info]);
+          socket.broadcast.emit("sync", [data]);
+          this.players_info.set(socket.id, info);
+          callback && callback();
+        }
+      );
       socket.on("heartbeat", () => {
         dev && console.log("heartbeat");
         if (playerInfo) {
@@ -29,13 +34,13 @@ export class Game {
       });
       socket.on("users", (data: PlayerDataFrame, callback) => {
         dev && console.log("users");
-        dev && console.log(data);
-        callback([...this.players_info.values()]);
+        dev && console.log([data]);
+        callback && callback([...this.players_info.values()]);
       });
       socket.on("sync", (data: PlayerDataFrame) => {
         dev && console.log("sync");
         dev && console.log(data);
-        socket.broadcast.emit("input", [data]);
+        socket.broadcast.emit("sync", [data]);
       });
       socket.on("input", (data: PlayerInputsFrame) => {
         dev && console.log("input");

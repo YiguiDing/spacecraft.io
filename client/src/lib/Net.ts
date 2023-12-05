@@ -62,10 +62,8 @@ export class Net implements Observer {
       this.client.emit(
         "enter",
         this.netHelper.getPlayerInfoFrame(this.game),
-        (syncData: PlayerDataFrame) => {
-          console.log("syncData");
-          console.log(syncData);
-          this.netHelper.applySelfDataFrame(this.game, syncData);
+        this.netHelper.getPlayerDataFrame(this.game),
+        () => {
           resolve();
         }
       );
