@@ -18,12 +18,14 @@ export class Spacecraft implements Player {
   pos = new Vector(100, 100); // 位置
   vel = new Vector(0, 0); // 矢量速度
   dir = new Vector(random_flo(-1, 1), random_flo(-1, 1)).normalize(); // 方向
-  movAcc1Speed = 200; // 普通移动加速度
-  movAcc2Speed = 400; // 加速移动加速度
-  movMaxSpeed = 600; // 最大速度
+  movAcc1Speed = 300; // 普通移动加速度
+  movAcc2Speed = 600; // 加速移动加速度
+  movMaxSpeed = 1200; // 最大速度
+  movDecSpeed = 0.96; // 移动速度的衰减
   rotSpeed = 0; // 旋转速度
-  rotAccSpeed = 90; // 旋转加速度
+  rotAccSpeed = 180; // 旋转加速度
   rotMaxSpeed = 365; // 旋转最大速度
+  rotDecSpeed = 0.95; // 旋转速度的衰减
   fillStyle = random_pick(["gray", "white"]);
   strokeStyle = random_pick(["black"]);
   height = 20; // 宽
@@ -52,7 +54,7 @@ export class Spacecraft implements Player {
         this.vel.add(this.dir.mulNew(this.movAcc1Speed * dt)); // 普通移动
       }
     } else {
-      this.vel.mul(0.99); // 速度衰减
+      this.vel.mul(this.movDecSpeed); // 速度衰减
     }
     // 转弯
     if (input.includes(Action.TurnLeft)) {
@@ -60,7 +62,7 @@ export class Spacecraft implements Player {
     } else if (input.includes(Action.TurnRight)) {
       this.rotSpeed += this.rotAccSpeed * dt; // 右旋
     } else {
-      this.rotSpeed *= 0.99; // 衰减
+      this.rotSpeed *= this.rotDecSpeed; // 衰减
     }
 
     // 限制移动速度
@@ -73,10 +75,10 @@ export class Spacecraft implements Player {
     // 计算旋转速度计算方向
     this.dir.rotate(radians(this.rotSpeed * dt));
 
-    // 限制位置
+    // 不穿墙
     // this.pos.x = bound(0, this.pos.x, game.width);
     // this.pos.y = bound(0, this.pos.y, game.height);
-    // 不限制位置
+    // 穿墙
     this.pos.x = unbound(0, this.pos.x, game.width);
     this.pos.y = unbound(0, this.pos.y, game.height);
   }
@@ -213,6 +215,7 @@ export class MissileBullet implements Bullet {
     public dir: Vector, // 方向
     public vel: Vector // 速度
   ) {
+    this.maxSpeed += vel.len();
     this.creatTime = Date.now();
   }
   update(game: Game, player: Player, input: Actions, dt: number) {
